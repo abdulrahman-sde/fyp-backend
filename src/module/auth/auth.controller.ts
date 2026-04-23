@@ -1,25 +1,22 @@
 import type { Request, Response } from "express";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { ok, created, noContent } from "../../shared/response.js";
+import { COOKIE_NAMES, REFRESH_TOKEN_EXPIRY_SECONDS } from "../../shared/constants.js";
 import {
-  COOKIE_NAMES,
-  REFRESH_TOKEN_EXPIRY_SECONDS,
-} from "../../shared/constants.js";
-import { registerSchema, loginSchema, onboardingSchema } from "./auth.validator.js";
+  registerSchema,
+  loginSchema,
+  recruiterOnboardingSchema,
+  candidateOnboardingSchema,
+} from "./auth.validator.js";
 import * as authService from "./auth.service.js";
 import * as repo from "./auth.dal.js";
-import { UnauthorizedError, NotFoundError } from "../../shared/errors.js";
+import { UnauthorizedError, NotFoundError, ValidationError } from "../../shared/errors.js";
 
 const IS_PROD = process.env.NODE_ENV === "production";
 
 function setAuthCookies(res: Response, accessToken: string, refreshToken: string) {
   const base = { httpOnly: true, secure: IS_PROD, sameSite: "lax" as const };
-
-  res.cookie(COOKIE_NAMES.ACCESS, accessToken, {
-    ...base,
-    maxAge: 15 * 60 * 1000, // 15 min
-  });
-
+  res.cookie(COOKIE_NAMES.ACCESS, accessToken, { ...base, maxAge: 15 * 60 * 1000 });
   res.cookie(COOKIE_NAMES.REFRESH, refreshToken, {
     ...base,
     maxAge: REFRESH_TOKEN_EXPIRY_SECONDS * 1000,
@@ -72,16 +69,33 @@ export const logoutHandler = asyncHandler(async (req: Request, res: Response) =>
   return noContent(res);
 });
 
-export const onboardingHandler = asyncHandler(async (req: Request, res: Response) => {
+export const recruiterOnboardingHandler = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.sub;
-  const input = onboardingSchema.parse(req.body);
-  const user = await authService.completeOnboarding(userId, input);
+  const input = recruiterOnboardingSchema.parse(req.body);
+  const user = await authService.completeRecruiterOnboarding(userId, input);
+  return ok(res, { user });
+});
+
+export const candidateOnboardingHandler = asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.user!.sub;
+
+  const file = req.file;
+  if (!file) throw new ValidationError("Resume PDF is required");
+
+  const input = candidateOnboardingSchema.parse({
+    firstName: req.body.firstName,
+    lastName: req.body.lastName,
+    location: req.body.location,
+    interests: req.body.interests,
+  });
+
+  const user = await authService.completeCandidateOnboarding(userId, input, file);
   return ok(res, { user });
 });
 
 export const meHandler = asyncHandler(async (req: Request, res: Response) => {
   const full = await repo.findUserById(req.user!.sub);
   if (!full) throw new NotFoundError("User not found");
-  const user = await authService.buildAuthUser(full);
+  const user = authService.buildAuthUser(full);
   return ok(res, { user });
 });

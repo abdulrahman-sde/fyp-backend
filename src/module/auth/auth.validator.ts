@@ -10,6 +10,7 @@ export const registerSchema = z.object({
     .regex(/[0-9]/, "Password must contain at least one number"),
   firstName: z.string().min(1, "First name is required").max(100),
   lastName: z.string().min(1, "Last name is required").max(100),
+  role: z.enum(["APPLICANT", "RECRUITER"]).default("RECRUITER"),
 });
 
 export const loginSchema = z.object({
@@ -17,7 +18,7 @@ export const loginSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
-export const onboardingSchema = z.object({
+export const recruiterOnboardingSchema = z.object({
   companyName: z.string().min(1, "Company name is required").max(255),
   firstName: z.string().min(1, "First name is required").max(100),
   lastName: z.string().min(1, "Last name is required").max(100),
@@ -28,4 +29,20 @@ export const onboardingSchema = z.object({
   location: z.string().max(200).optional(),
   phone: z.string().max(30).optional(),
   jobTitle: z.string().max(150).optional(),
+});
+
+// Resume file is handled by multer — only the text fields are validated here
+export const candidateOnboardingSchema = z.object({
+  firstName: z.string().min(1, "First name is required").max(100),
+  lastName: z.string().min(1, "Last name is required").max(100),
+  location: z.string().min(1, "Location is required").max(200),
+  interests: z
+    .string()
+    .min(1, "At least one interest is required")
+    .transform((val) =>
+      val
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+    ),
 });

@@ -8,7 +8,12 @@ import type {
   JobSummary,
   JobDetail,
   PublicJobDetail,
+  PublicJobSummary,
 } from "./jobs.types.js";
+import type { z } from "zod";
+import type { listPublicJobsQuerySchema } from "./jobs.validator.js";
+
+type ListPublicJobsQuery = z.infer<typeof listPublicJobsQuerySchema>;
 import * as repo from "./jobs.dal.js";
 
 const CANDIDATE_BASE_URL = process.env["CANDIDATE_BASE_URL"] ?? "http://localhost:3000";
@@ -270,5 +275,43 @@ export async function getPublicJob(slug: string): Promise<PublicJobDetail> {
     company_website: job.company.website ?? null,
     company_industry: job.company.industry ?? null,
     share_link: shareLink(job.slug),
+    screening_questions: job.screening_questions ?? null,
+  };
+}
+
+export async function listPublicJobs(
+  query: ListPublicJobsQuery
+): Promise<{ jobs: PublicJobSummary[]; total: number; page: number; limit: number }> {
+  const skip = (query.page - 1) * query.limit;
+  const { jobs, total } = await repo.findPublishedJobs({
+    search: query.search,
+    job_type: query.job_type,
+    experience_level: query.experience_level,
+    location: query.location,
+    skip,
+    take: query.limit,
+  });
+
+  return {
+    jobs: jobs.map((job) => ({
+      id: job.id,
+      slug: job.slug,
+      title: job.title,
+      location: job.location ?? null,
+      job_type: job.job_type,
+      experience_level: job.experience_level,
+      salary_min: job.salary_min?.toString() ?? null,
+      salary_max: job.salary_max?.toString() ?? null,
+      salary_currency: job.salary_currency,
+      deadline: job.deadline?.toISOString() ?? null,
+      published_at: job.published_at!.toISOString(),
+      company_name: job.company.name,
+      company_industry: job.company.industry ?? null,
+      applicants_count: job._count.applications,
+      share_link: shareLink(job.slug),
+    })),
+    total,
+    page: query.page,
+    limit: query.limit,
   };
 }

@@ -4,6 +4,7 @@ import http from "http";
 import cookieParser from "cookie-parser";
 import authRouter from "./module/auth/auth.routes.js";
 import jobsRouter from "./module/jobs/jobs.routes.js";
+import applicationsRouter from "./module/applications/applications.routes.js";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
 
 const app = express();
@@ -26,6 +27,7 @@ app.use(
 
 app.use("/api/auth", authRouter);
 app.use("/api/jobs", jobsRouter);
+app.use("/api/applications", applicationsRouter);
 
 app.use(errorMiddleware);
 

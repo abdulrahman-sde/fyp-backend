@@ -1,11 +1,13 @@
 import { Router } from "express";
-import { requireAuth } from "../../middlewares/auth.middleware.js";
+import { requireAuth, requireRole } from "../../middlewares/auth.middleware.js";
+import { resumeUpload } from "../../lib/upload.js";
 import {
   registerHandler,
   loginHandler,
   refreshHandler,
   logoutHandler,
-  onboardingHandler,
+  recruiterOnboardingHandler,
+  candidateOnboardingHandler,
   meHandler,
 } from "./auth.controller.js";
 
@@ -15,7 +17,21 @@ router.post("/register", registerHandler);
 router.post("/login", loginHandler);
 router.post("/refresh", refreshHandler);
 router.post("/logout", logoutHandler);
-router.post("/onboarding", requireAuth, onboardingHandler);
 router.get("/me", requireAuth, meHandler);
+
+router.post(
+  "/onboarding/recruiter",
+  requireAuth,
+  requireRole("RECRUITER"),
+  recruiterOnboardingHandler
+);
+
+router.post(
+  "/onboarding/candidate",
+  requireAuth,
+  requireRole("APPLICANT"),
+  resumeUpload.single("resume"),
+  candidateOnboardingHandler
+);
 
 export default router;

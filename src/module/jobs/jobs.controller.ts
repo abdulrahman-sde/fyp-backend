@@ -6,6 +6,7 @@ import {
   updateJobSchema,
   listJobsQuerySchema,
   updateJobStatusSchema,
+  listPublicJobsQuerySchema,
 } from "./jobs.validator.js";
 import * as jobsService from "./jobs.service.js";
 
@@ -63,4 +64,10 @@ export const getPublicJobHandler = asyncHandler(async (req: Request, res: Respon
   const slug = req.params["slug"] as string;
   const job = await jobsService.getPublicJob(slug);
   return ok(res, { job });
+});
+
+export const listPublicJobsHandler = asyncHandler(async (req: Request, res: Response) => {
+  const query = listPublicJobsQuerySchema.parse(req.query);
+  const result = await jobsService.listPublicJobs(query);
+  return ok(res, result);
 });

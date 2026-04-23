@@ -117,3 +117,46 @@ export async function findPublishedJobBySlug(slug: string) {
     },
   });
 }
+
+export async function findPublishedJobs(filters: {
+  search: string | undefined;
+  job_type: string | undefined;
+  experience_level: string | undefined;
+  location: string | undefined;
+  skip: number;
+  take: number;
+}) {
+  const where: Prisma.JobWhereInput = {
+    status: "PUBLISHED",
+    deleted_at: null,
+    ...(filters.job_type && { job_type: filters.job_type as Prisma.EnumJobTypeFilter }),
+    ...(filters.experience_level && { experience_level: filters.experience_level as Prisma.EnumExperienceLevelFilter }),
+    ...(filters.location && {
+      location: { contains: filters.location, mode: "insensitive" as const },
+    }),
+    ...(filters.search && {
+      OR: [
+        { title: { contains: filters.search, mode: "insensitive" as const } },
+        { description: { contains: filters.search, mode: "insensitive" as const } },
+        { requirements: { contains: filters.search, mode: "insensitive" as const } },
+        { company: { name: { contains: filters.search, mode: "insensitive" as const } } },
+      ],
+    }),
+  };
+
+  const [jobs, total] = await prisma.$transaction([
+    prisma.job.findMany({
+      where,
+      orderBy: { published_at: "desc" },
+      skip: filters.skip,
+      take: filters.take,
+      include: {
+        company: { select: { name: true, industry: true } },
+        _count: { select: { applications: true } },
+      },
+    }),
+    prisma.job.count({ where }),
+  ]);
+
+  return { jobs, total };
+}

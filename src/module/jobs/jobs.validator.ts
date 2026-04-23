@@ -28,3 +28,12 @@ export const listJobsQuerySchema = z.object({
 export const updateJobStatusSchema = z.object({
   status: z.enum(["DRAFT", "PUBLISHED", "CLOSED", "ARCHIVED"]),
 });
+
+export const listPublicJobsQuerySchema = z.object({
+  search: z.string().optional(),
+  job_type: z.enum(["FULL_TIME", "PART_TIME", "CONTRACT", "INTERNSHIP", "REMOTE"]).optional(),
+  experience_level: z.enum(["ENTRY", "MID", "SENIOR", "LEAD", "EXECUTIVE"]).optional(),
+  location: z.string().optional(),
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(50).default(12),
+});

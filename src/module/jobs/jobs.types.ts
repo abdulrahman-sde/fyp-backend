@@ -65,4 +65,23 @@ export interface PublicJobDetail {
   company_website: string | null;
   company_industry: string | null;
   share_link: string;
+  screening_questions: string | null;
+}
+
+export interface PublicJobSummary {
+  id: string;
+  slug: string;
+  title: string;
+  location: string | null;
+  job_type: string;
+  experience_level: string;
+  salary_min: string | null;
+  salary_max: string | null;
+  salary_currency: string;
+  deadline: string | null;
+  published_at: string;
+  company_name: string;
+  company_industry: string | null;
+  applicants_count: number;
+  share_link: string;
 }

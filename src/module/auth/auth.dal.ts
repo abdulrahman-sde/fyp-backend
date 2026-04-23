@@ -2,6 +2,7 @@ import { prisma } from "../../lib/prisma.js";
 import type {
   User,
   RecruiterProfile,
+  ApplicantProfile,
   Company,
   RefreshToken,
   Prisma,
@@ -9,24 +10,27 @@ import type {
 
 // ---------- User ----------
 
-export async function findUserByEmail(
-  email: string
-): Promise<User | null> {
+export async function findUserByEmail(email: string): Promise<User | null> {
   return prisma.user.findUnique({ where: { email } });
 }
 
-export async function findUserById(
-  id: string
-): Promise<(User & { recruiter_profile: (RecruiterProfile & { company: Company }) | null }) | null> {
+export async function findUserById(id: string): Promise<
+  | (User & {
+      recruiter_profile: (RecruiterProfile & { company: Company }) | null;
+      applicant_profile: ApplicantProfile | null;
+    })
+  | null
+> {
   return prisma.user.findUnique({
     where: { id },
-    include: { recruiter_profile: { include: { company: true } } },
+    include: {
+      recruiter_profile: { include: { company: true } },
+      applicant_profile: true,
+    },
   });
 }
 
-export async function createUser(
-  data: Prisma.UserCreateInput
-): Promise<User> {
+export async function createUser(data: Prisma.UserCreateInput): Promise<User> {
   return prisma.user.create({ data });
 }
 
@@ -51,7 +55,7 @@ export async function revokeRefreshToken(tokenHash: string): Promise<void> {
   });
 }
 
-// ---------- Onboarding ----------
+// ---------- Recruiter Onboarding ----------
 
 export async function createCompanyAndRecruiterProfile(
   userId: string,
@@ -62,6 +66,23 @@ export async function createCompanyAndRecruiterProfile(
     const created = await tx.company.create({ data: company });
     await tx.recruiterProfile.create({
       data: { ...profile, user_id: userId, company_id: created.id },
+    });
+  });
+}
+
+// ---------- Candidate Onboarding ----------
+
+export async function createApplicantProfileWithResume(
+  userId: string,
+  profile: Omit<Prisma.ApplicantProfileUncheckedCreateInput, "user_id">,
+  resume: Omit<Prisma.ResumeUncheckedCreateInput, "applicant_id">
+): Promise<void> {
+  await prisma.$transaction(async (tx) => {
+    const created = await tx.applicantProfile.create({
+      data: { ...profile, user_id: userId },
+    });
+    await tx.resume.create({
+      data: { ...resume, applicant_id: created.id },
     });
   });
 }

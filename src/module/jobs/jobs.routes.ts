@@ -8,12 +8,14 @@ import {
   updateJobStatusHandler,
   deleteJobHandler,
   getPublicJobHandler,
+  listPublicJobsHandler,
   getDashboardStatsHandler,
 } from "./jobs.controller.js";
 
 const router = Router();
 
 // Public — no auth required
+router.get("/public", listPublicJobsHandler);
 router.get("/public/:slug", getPublicJobHandler);
 
 router.use(requireAuth);

@@ -29,6 +29,12 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-hireflow}:${POSTGRES_PASSWORD:-hireflow}@db:5432/${POSTGRES_DB:-hireflow}
       NODE_ENV: development
       PORT: 4000
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      CLOUDINARY_URL: ${CLOUDINARY_URL}
+      DEEPGRAM_API_KEY: ${DEEPGRAM_API_KEY}
+      ELEVEN_API_KEY: ${ELEVEN_API_KEY}
+      JWT_SECRET: ${JWT_SECRET:-change_me_in_production_use_a_long_random_secret}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
     ports:
       - "4000:4000"
     volumes:
