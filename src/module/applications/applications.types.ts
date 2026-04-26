@@ -23,6 +23,7 @@ export interface ApplicationSummary {
   match_score: number | null;
   applied_at: string;
   updated_at: string;
+  interview: { id: string; status: string; scheduled_at: string | null; expires_at: string } | null;
 }
 
 export interface RecruiterApplicationRow {

@@ -45,13 +45,15 @@ enum ExperienceLevel {
 }
 
 enum ApplicationStatus {
-    APPLIED // just submitted
-    SCREENING // resume under review
-    SHORTLISTED // passed resume screening, awaiting interview
-    INTERVIEWED // completed AI interview
-    OFFERED // final offer extended (future scope, kept for pipeline)
+    APPLIED             // just submitted
+    SCREENING           // resume under AI analysis
+    UNDER_REVIEW        // recruiter manually reviewing
+    SHORTLISTED         // passed screening, interview link sent
+    INTERVIEW_SCHEDULED // interview booked / link opened
+    INTERVIEWED         // AI interview completed
+    HIRED               // offer accepted
     REJECTED
-    WITHDRAWN // applicant pulled out
+    WITHDRAWN           // applicant pulled out
 }
 
 enum InterviewStatus {

@@ -1,5 +1,7 @@
 import { prisma } from "../../lib/prisma.js";
 import type { Prisma } from "../../generated/prisma/client.js";
+import { ApplicationStatus } from "../../generated/prisma/client.js";
+import { randomBytes } from "crypto";
 
 export async function findRecruiterProfileByUserId(userId: string) {
   return prisma.recruiterProfile.findUnique({
@@ -65,6 +67,9 @@ export async function findMyApplications(
             job_type: true,
             company: { select: { name: true } },
           },
+        },
+        interview: {
+          select: { id: true, status: true, scheduled_at: true, expires_at: true },
         },
       },
     }),
@@ -146,7 +151,8 @@ export async function findApplicationByIdForRecruiter(id: string, recruiterId: s
       job: { recruiter_id: recruiterId },
     },
     include: {
-      job: { select: { recruiter_id: true } },
+      job: { select: { recruiter_id: true, title: true, company: { select: { name: true } } } },
+      applicant: { select: { first_name: true, last_name: true, user: { select: { email: true } } } },
       interview: { select: { id: true, status: true } },
     },
   });
@@ -154,15 +160,63 @@ export async function findApplicationByIdForRecruiter(id: string, recruiterId: s
 
 export async function updateApplicationDecision(
   id: string,
-  decision: "SHORTLISTED" | "REJECTED",
-  rejectionReason?: string
+  decision: "SHORTLISTED" | "REJECTED" | "HIRED" | "UNDER_REVIEW",
+  rejectionReason?: string,
+  customQuestions?: string[],
+  interviewWindowStart?: string,
+  interviewWindowEnd?: string
 ) {
-  return prisma.application.update({
+  const existing = await prisma.application.findUnique({
     where: { id },
-    data: {
-      status: decision,
-      reviewed_at: new Date(),
-      ...(decision === "REJECTED" && rejectionReason ? { rejection_reason: rejectionReason } : {}),
-    },
+    select: { match_details: true, job_id: true },
+  });
+  const currentDetails = (existing?.match_details as Record<string, unknown> | null) ?? {};
+
+  return prisma.$transaction(async (tx) => {
+    const updated = await tx.application.update({
+      where: { id },
+      data: {
+        status: decision as ApplicationStatus,
+        reviewed_at: new Date(),
+        ...(decision === "REJECTED" && rejectionReason ? { rejection_reason: rejectionReason } : {}),
+        ...(decision === "SHORTLISTED" && customQuestions?.length
+          ? {
+              match_details: {
+                ...currentDetails,
+                custom_interview_questions: customQuestions,
+              } as Prisma.InputJsonValue,
+            }
+          : {}),
+      },
+    });
+
+    if (decision === "SHORTLISTED" && existing) {
+      const scheduledAt = interviewWindowStart ? new Date(interviewWindowStart) : new Date();
+      // Default window: start now, expire in 7 days
+      const expiresAt = interviewWindowEnd
+        ? new Date(interviewWindowEnd)
+        : new Date(scheduledAt.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+      const accessToken = randomBytes(32).toString("hex");
+
+      await tx.interview.upsert({
+        where: { application_id: id },
+        create: {
+          application_id: id,
+          job_id: existing.job_id,
+          access_token: accessToken,
+          status: "PENDING",
+          scheduled_at: scheduledAt,
+          expires_at: expiresAt,
+        },
+        update: {
+          scheduled_at: scheduledAt,
+          expires_at: expiresAt,
+          status: "PENDING",
+        },
+      });
+    }
+
+    return updated;
   });
 }

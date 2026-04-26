@@ -9,6 +9,7 @@ import type {
 } from "./applications.types.js";
 import * as repo from "./applications.dal.js";
 import { analyzeResume } from "../../ai/resume-analysis/analysis.js";
+import { sendShortlistEmail, sendRejectionEmail } from "../../lib/mailer.js";
 
 export async function submitApplication(
   userId: string,
@@ -91,6 +92,14 @@ export async function listMyApplications(
       match_score: app.match_score ? Number(app.match_score) : null,
       applied_at: app.applied_at.toISOString(),
       updated_at: app.updated_at.toISOString(),
+      interview: app.interview
+        ? {
+            id: app.interview.id,
+            status: app.interview.status,
+            scheduled_at: app.interview.scheduled_at?.toISOString() ?? null,
+            expires_at: app.interview.expires_at.toISOString(),
+          }
+        : null,
     })),
     total,
     page: query.page,
@@ -186,8 +195,34 @@ export async function updateApplicationDecision(
   const updated = await repo.updateApplicationDecision(
     applicationId,
     input.decision,
-    input.rejection_reason
+    input.rejection_reason,
+    input.custom_questions,
+    input.interview_window_start,
+    input.interview_window_end
   );
+
+  const candidateName = `${application.applicant.first_name} ${application.applicant.last_name}`.trim();
+  const candidateEmail = application.applicant.user.email;
+  const jobTitle = application.job.title;
+  const companyName = application.job.company.name;
+
+  if (input.decision === "SHORTLISTED") {
+    void sendShortlistEmail({
+      to: candidateEmail,
+      candidateName,
+      jobTitle,
+      companyName,
+      ...(input.custom_questions?.length ? { customQuestions: input.custom_questions } : {}),
+    }).catch((err) => console.error("[Mailer] Failed to send shortlist email:", err));
+  } else if (input.decision === "REJECTED") {
+    void sendRejectionEmail({
+      to: candidateEmail,
+      candidateName,
+      jobTitle,
+      companyName,
+      ...(input.rejection_reason ? { rejectionReason: input.rejection_reason } : {}),
+    }).catch((err) => console.error("[Mailer] Failed to send rejection email:", err));
+  }
 
   return { id: updated.id, status: updated.status };
 }
