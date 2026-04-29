@@ -12,6 +12,13 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
+
+# Prisma loads `prisma.config.ts`, which requires DATABASE_URL at config-load time.
+# During `docker build`, Compose env files (like `.env.prod`) are not applied.
+# Provide a harmless default to allow `prisma generate` to run.
+ARG DATABASE_URL=postgresql://prisma:prisma@localhost:5432/prisma?schema=public
+ENV DATABASE_URL=$DATABASE_URL
+
 RUN npx prisma generate
 RUN npm run build
 
