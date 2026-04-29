@@ -135,7 +135,34 @@ export async function findJobApplicationsForRecruiter(
             resume: { select: { file_key: true } },
           },
         },
-        interview: { select: { id: true, status: true } },
+        interview: {
+          select: {
+            id: true,
+            status: true,
+            completed_at: true,
+            report: {
+              select: {
+                overall_score: true,
+                pass_fail: true,
+                strengths: true,
+                weaknesses: true,
+                ai_recommendation: true,
+                full_report_json: true,
+                generated_at: true,
+              },
+            },
+            questions: {
+              orderBy: { sequence: "asc" },
+              select: {
+                sequence: true,
+                question_text: true,
+                transcript: true,
+                score: true,
+                score_rationale: true,
+              },
+            },
+          },
+        },
       },
     }),
     prisma.application.count({ where }),

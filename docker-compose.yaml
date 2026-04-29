@@ -35,6 +35,16 @@ services:
       ELEVEN_API_KEY: ${ELEVEN_API_KEY}
       JWT_SECRET: ${JWT_SECRET:-change_me_in_production_use_a_long_random_secret}
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
+      GROQ_API_KEY: ${GROQ_API_KEY}
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      # LiveKit — backend in container reaches host LiveKit via host.docker.internal
+      # (override of any LIVEKIT_URL=localhost from .env, which would resolve to the container itself)
+      LIVEKIT_URL: ws://host.docker.internal:7880
+      # URL returned to the candidate's browser — must be reachable from the host
+      LIVEKIT_PUBLIC_URL: ${LIVEKIT_PUBLIC_URL:-ws://localhost:7880}
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY:-devkey}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET:-secret_dev_only_not_for_production_at_least_32chars}
+      AGENT_WEBHOOK_SECRET: ${AGENT_WEBHOOK_SECRET:-dev_agent_webhook_secret_change_in_prod_xyz}
     ports:
       - "4000:4000"
     volumes:

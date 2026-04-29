@@ -162,7 +162,31 @@ export async function listJobApplications(
       candidate_location: app.applicant.location ?? null,
       avatar_initials: initials,
       resume_url: app.applicant.resume?.file_key ?? null,
-      interview: app.interview ? { id: app.interview.id, status: app.interview.status } : null,
+      interview: app.interview
+        ? {
+            id: app.interview.id,
+            status: app.interview.status,
+            completed_at: app.interview.completed_at?.toISOString() ?? null,
+            report: app.interview.report
+              ? {
+                  overall_score: Number(app.interview.report.overall_score),
+                  pass_fail: app.interview.report.pass_fail,
+                  strengths: app.interview.report.strengths,
+                  weaknesses: app.interview.report.weaknesses,
+                  ai_recommendation: app.interview.report.ai_recommendation,
+                  full_report_json: app.interview.report.full_report_json as Record<string, unknown>,
+                  generated_at: app.interview.report.generated_at.toISOString(),
+                }
+              : null,
+            questions: app.interview.questions.map((q) => ({
+              sequence: q.sequence,
+              question_text: q.question_text,
+              transcript: q.transcript,
+              score: q.score ? Number(q.score) : null,
+              score_rationale: q.score_rationale,
+            })),
+          }
+        : null,
     };
   });
 

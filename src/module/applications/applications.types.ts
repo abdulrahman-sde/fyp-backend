@@ -26,6 +26,32 @@ export interface ApplicationSummary {
   interview: { id: string; status: string; scheduled_at: string | null; expires_at: string } | null;
 }
 
+export interface InterviewQuestionRow {
+  sequence: number;
+  question_text: string;
+  transcript: string | null;
+  score: number | null;
+  score_rationale: string | null;
+}
+
+export interface InterviewReportRow {
+  overall_score: number;
+  pass_fail: boolean;
+  strengths: string[];
+  weaknesses: string[];
+  ai_recommendation: string;
+  full_report_json: Record<string, unknown>;
+  generated_at: string;
+}
+
+export interface RecruiterInterviewRow {
+  id: string;
+  status: string;
+  completed_at: string | null;
+  report: InterviewReportRow | null;
+  questions: InterviewQuestionRow[];
+}
+
 export interface RecruiterApplicationRow {
   id: string;
   status: string;
@@ -39,5 +65,5 @@ export interface RecruiterApplicationRow {
   candidate_location: string | null;
   avatar_initials: string;
   resume_url: string | null;
-  interview: { id: string; status: string } | null;
+  interview: RecruiterInterviewRow | null;
 }
