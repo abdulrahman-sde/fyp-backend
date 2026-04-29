@@ -28,7 +28,7 @@ services:
     env_file:
       - .env.dev
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-hireflow}:${POSTGRES_PASSWORD:-hireflow}@db:5432/${POSTGRES_DB:-hireflow}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-hireflow}:${POSTGRES_PASSWORD:-hireflow}@db:5432/${POSTGRES_DB:-hireflow}?sslmode=disable
       NODE_ENV: development
       PORT: 4000
       # LiveKit — if LiveKit runs on the host machine, Linux needs host-gateway mapping.
