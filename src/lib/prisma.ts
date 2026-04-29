@@ -3,11 +3,12 @@ import pg from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../generated/prisma/client.js";
 
+const connectionString = process.env.DATABASE_URL?.replace(/[?&]sslmode=[^&]*/g, "");
+const isRds = process.env.DATABASE_URL?.includes("rds.amazonaws.com") ?? false;
+
 const pool = new pg.Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL?.includes("rds.amazonaws.com")
-    ? { rejectUnauthorized: false }
-    : false,
+  connectionString,
+  ssl: isRds ? { rejectUnauthorized: false } : false,
 });
 
 const adapter = new PrismaPg(pool);
